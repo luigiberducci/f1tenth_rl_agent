@@ -1,0 +1,5 @@
+scan_topic: scan
+nav_topic: drive
+odom_topic: odom/twist/twist/linear
+model: models/model_20220714.zip
+frame_skip: 10

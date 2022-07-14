@@ -1,0 +1,9 @@
+<?xml version="1.0" encoding="utf-8"?>
+
+<launch>
+
+    <node pkg="reward_shaping_node" type="node.py" name="reward_shaping_node" output="screen">
+        <rosparam command="load" file="$(find reward_shaping_node)/config/params.yaml"/>
+    </node>
+
+</launch>

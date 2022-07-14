@@ -1,0 +1,12 @@
+world:
+  name: lecture_hall
+agents:
+  - id: A
+    vehicle:
+      name: racecar
+      sensors: [ lidar, pose, velocity, acceleration ]
+      actuators: [speed, steering]
+      color: blue
+    task:
+      task_name: maximize_progress
+      params: {laps: 2, time_limit: 180.0, terminate_on_collision: False}
