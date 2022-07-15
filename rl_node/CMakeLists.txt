@@ -25,7 +25,7 @@ find_package(catkin REQUIRED COMPONENTS
 ## Uncomment this if the package has a setup.py. This macro ensures
 ## modules and global scripts declared therein get installed
 ## See http://ros.org/doc/api/catkin/html/user_guide/setup_dot_py.html
-catkin_python_setup()
+#catkin_python_setup()
 
 ################################################
 ## Declare ROS messages, services and actions ##
@@ -94,10 +94,10 @@ catkin_python_setup()
 
 ## Generate dynamic reconfigure parameters in the 'cfg' folder
 #generate_dynamic_reconfigure_options(
-   #cfg/RLNode.cfg
+#        cfg/Node.cfg
 #)
 
-#add_dependencies(${PROJECT_NAME} ${PROJECT_NAME}_gencfg)
+#add_dependencies(example_node ${PROJECT_NAME}_gencfg)
 
 ###################################
 ## catkin specific configuration ##
@@ -169,7 +169,6 @@ catkin_install_python(PROGRAMS
         src/node.py
         DESTINATION ${CATKIN_PACKAGE_BIN_DESTINATION}
         )
-
 
 ## Mark executables for installation
 ## See http://docs.ros.org/melodic/api/catkin/html/howto/format1/building_executables.html

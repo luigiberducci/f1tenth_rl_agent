@@ -30,10 +30,11 @@ RUN apt-get update && apt-get install -y --no-install-recommends \
     ros-noetic-ros-core=1.5.0-1* \
     && rm -rf /var/lib/apt/lists/*
 RUN apt-get update && apt-get install -y ros-noetic-tf2-geometry-msgs \
-    ros-noetic-ackermann-msgs ros-noetic-joy ros-noetic-map-server
+    ros-noetic-ackermann-msgs ros-noetic-joy ros-noetic-map-server \
+    ros-noetic-dynamic-reconfigure 
 
 # install pip
-RUN apt-get update && apt install -y curl build-essential
+RUN apt-get update && apt install -y curl build-essential git
 RUN curl https://bootstrap.pypa.io/get-pip.py -o get-pip.py
 RUN python3 get-pip.py
 

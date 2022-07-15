@@ -4,8 +4,8 @@ import sys
 
 # ROS Imports
 import rospy
-import rospkg
-import yaml
+from ddynamic_reconfigure_python.ddynamic_reconfigure import DDynamicReconfigure
+from marshmallow_dataclass import dataclass
 
 from sensor_msgs.msg import LaserScan
 from nav_msgs.msg import Odometry
@@ -13,45 +13,64 @@ from ackermann_msgs.msg import AckermannDriveStamped
 
 from agents.agent64 import Agent64
 
+
 class AgentNode:
     _model_is_loaded = False
 
+    @dataclass
+    class NodeConfig:
+        scan_topic: str = "/scan"
+        odom_topic: str = "/odom"
+        drive_topic: str = "/drive"
+        model_file: str = "none"
+
+        frame_skip: int = 10
+        steering_multiplier: float = 1.0
+        speed_multiplier: float = 1.0
+
+        debug_mode: bool = False
+        debug_speed: float = 1.0
+
+        def update(self, params: dict):
+            for k, v in params.items():
+                if hasattr(self, k):
+                    setattr(self, k, v)
+
     def __init__(self):
         # Read params
-        scan_topic = rospy.get_param("/rl_node/scan_topic", default="/scan")
-        odom_topic = rospy.get_param("/rl_node/odom_topic", default="/odom")
-        drive_topic = rospy.get_param("/rl_node/nav_topic", default="/drive")
-        model_file = rospy.get_param('/rl_node/model', default='model_20220714')
-
-        frame_skip = rospy.get_param('/rl_node/frame_skip', default=10)
-        steering_multiplier = rospy.get_param('/rl_node/steering_multiplier', default=1.0)
-        speed_multiplier = rospy.get_param('/rl_node/speed_multiplier', default=1.0)
-
-        debug_mode = rospy.get_param('/rl_node/debug_mode', default=False)
-        debug_speed = rospy.get_param('/rl_node/debug_speed', default=1.0)
+        self.config = self.read_params()
 
         # Topics & Subscriptions,Publishers
-        self.lidar_sub = rospy.Subscriber(scan_topic, LaserScan, self.lidar_callback, queue_size=1)
-        self.vel_sub = rospy.Subscriber(odom_topic, Odometry, self.odom_callback, queue_size=1)
-        self.drive_pub = rospy.Publisher(drive_topic, AckermannDriveStamped, queue_size=1)
+        self.lidar_sub = rospy.Subscriber(self.config.scan_topic, LaserScan, self.lidar_callback, queue_size=1)
+        self.vel_sub = rospy.Subscriber(self.config.odom_topic, Odometry, self.odom_callback, queue_size=1)
+        self.drive_pub = rospy.Publisher(self.config.drive_topic, AckermannDriveStamped, queue_size=1)
 
         # Internal variables
+        self.agent = None
+        self._model_is_loaded = False
         self._current_speed = 0.0
-        self._multipliers = {"steering": steering_multiplier, "speed": speed_multiplier}
-        self._debug = {"enabled": debug_mode, "debug_speed": debug_speed}
-        self._ctrl_interval = rospy.Duration(0.01 * frame_skip)
         self._last_time = rospy.Time()
 
-        # Load model
-        self.agent, result_load = self.build_agent(model_file)
-        self._model_is_loaded = result_load
+    def read_params(self):
+        config = self.NodeConfig()
+        config.scan_topic = rospy.get_param("/node/scan_topic", default="/scan")
+        config.odom_topic = rospy.get_param("/node/odom_topic", default="/odom")
+        config.drive_topic = rospy.get_param("/node/nav_topic", default="/drive")
+        config.model_file = rospy.get_param('/node/model', default='torch_model_20220714')
 
-        # debug
-        rospy.loginfo(f"[**INFO**] Model and param configuration have been loaded.")
+        config.frame_skip = rospy.get_param('/node/frame_skip', default=10)
+        config.steering_multiplier = rospy.get_param('/node/steering_multiplier', default=1.0)
+        config.speed_multiplier = rospy.get_param('/node/speed_multiplier', default=1.0)
+
+        config.debug_mode = rospy.get_param('/node/debug_mode', default=False)
+        config.debug_speed = rospy.get_param('/node/debug_speed', default=1.0)
+        return config
 
     def build_agent(self, model_file):
         agent_config_filepath = pathlib.Path(f"checkpoints/{model_file}.yaml")
         checkpoint_filepath = pathlib.Path(f"checkpoints/{model_file}.pt")
+        if not (agent_config_filepath.exists() and checkpoint_filepath.exists()):
+            return None, False
         agent = Agent64(agent_config_filepath)
         result_load = agent.load(checkpoint_filepath)
         return agent, result_load
@@ -64,7 +83,17 @@ class AgentNode:
         """
         Process each LiDAR scan as per the Follow Gap algorithm & publish an AckermannDriveStamped Message
         """
-        if not self._model_is_loaded or (rospy.Time.now() - self._last_time) < self._ctrl_interval:
+        if not self._model_is_loaded:
+            # Load model
+            self.agent, result_load = self.build_agent(self.config.model_file)
+            if not result_load:
+                rospy.loginfo(f"[**INFO**] No model loaded, model file: {self.config.model_file}")
+                return
+
+            self._model_is_loaded = result_load
+            rospy.loginfo(f"[**INFO**] Model and param configuration have been loaded.")
+
+        if (rospy.Time.now() - self._last_time) < rospy.Duration(0.01 * self.config.frame_skip):
             return
         self._last_time = rospy.Time.now()
 
@@ -72,16 +101,16 @@ class AgentNode:
         action = self.agent.get_action(observation, normalized=False)
         steer, speed = action["steering"], action["speed"]
 
-        steer, speed = self.adaptation(steer, speed, self._multipliers)
-        speed = self._debug["debug_speed"] if self._debug["enabled"] else speed
+        steer, speed = self.adaptation(steer, speed, self.config.speed_multiplier, self.config.steering_multiplier)
+        speed = self.config.debug_speed if self.config.debug_mode else speed
 
         self._drive(steer, speed)
         rospy.loginfo(f"Action: angle: {steer}, speed: {speed}\n")
 
     @staticmethod
-    def adaptation(steer, speed, multipliers):
-        steer *= multipliers["steering"]
-        speed *= multipliers["speed"]
+    def adaptation(steer, speed, speed_multiplier, steering_multiplier):
+        speed *= speed_multiplier
+        steer *= steering_multiplier
         return steer, speed
 
     def _drive(self, angle, speed):
@@ -93,30 +122,39 @@ class AgentNode:
         drive_msg.drive.speed = speed
         self.drive_pub.publish(drive_msg)
 
+    def reconfigure_callback(self, config, level):
+        rospy.loginfo(f"Reconfigure Request:")
+        rospy.loginfo("\n\t" + "\n\t".join([f"{k}: {v}" for k, v in config.items() if k != "groups"]))
+        self.config.update(config)
+        return config
+
 
 def main(args):
-    #param_file = pathlib.Path("cfg/simulation_params.yaml")
-    #result_load = load_params(param_file)
-    #assert result_load, "failed to load parameters"
+    # param_file = pathlib.Path("cfg/simulation_params.yaml")
+    # result_load = load_params(param_file)
+    # assert result_load, "failed to load parameters"
 
-    rospy.init_node("rl_node", anonymous=True)
+    rospy.init_node("node", anonymous=True)
     node = AgentNode()
+
+    # Create a D(ynamic)DynamicReconfigure
+    ddynrec = DDynamicReconfigure("example_dyn_rec")
+
+    # Add variables (name, description, default value, min, max, edit_method)
+    ddynrec.add_variable("model_file", "string variable", "")
+
+    ddynrec.add_variable("frame_skip", "integer variable", 10, 1, 100)
+    ddynrec.add_variable("steering_multiplier", "float/double variable", 1.0, 0.0, 1.0)
+    ddynrec.add_variable("speed_multiplier", "float/double variable", 1.0, 0.0, 1.0)
+
+    ddynrec.add_variable("debug_mode", "bool variable", True)
+    ddynrec.add_variable("debug_speed", "float/double variable", 1.5, 0.0, 3.0)
+
+    # Start the server
+    ddynrec.start(callback=node.reconfigure_callback)
 
     rospy.sleep(0.1)
     rospy.spin()
-
-
-def load_params(param_file: pathlib.Path):
-    with open(param_file, "r") as f:
-        params = yaml.load(f, yaml.Loader)
-    for k, v in params.items():
-        rospy.set_param(k, v)
-    return True
-
-
-def callback(config, level):
-    rospy.loginfo(f"Reconfigure Request: {config}")
-    return config
 
 
 if __name__ == '__main__':

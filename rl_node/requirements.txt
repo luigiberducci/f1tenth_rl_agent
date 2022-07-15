@@ -4,3 +4,4 @@ torch==1.10.0
 numpy==1.23.1
 PyYAML
 marshmallow-dataclass
+git+https://github.com/pal-robotics/ddynamic_reconfigure_python.git
