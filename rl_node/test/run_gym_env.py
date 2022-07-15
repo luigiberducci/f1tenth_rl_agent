@@ -4,13 +4,13 @@ import gym
 from racecar_gym import SingleAgentScenario
 from racecar_gym.envs import gym_api
 import time
+import numpy as np
 
-from rl_node.utils import utils
-from rl_node.agent.agent64 import Agent64
+from rl_node.src.agents.agent64 import Agent64
 
 env = gym.make("SingleAgentLecture_hall_Gui-v0")
 
-model_file = "model_20220714"
+model_file = "torch_model_20220714"
 frame_skip = 10
 
 # make env
@@ -20,9 +20,9 @@ scenario = SingleAgentScenario.from_spec(
 )
 env = gym_api.SingleAgentRaceEnv(scenario=scenario)
 
-# make agent
-agent_config_filepath = pathlib.Path(f"../models/{model_file}.yaml")
-checkpoint_filepath = pathlib.Path(f"../models/{model_file}.zip")
+# make agents
+agent_config_filepath = pathlib.Path(f"../checkpoints/{model_file}.yaml")
+checkpoint_filepath = pathlib.Path(f"../checkpoints/{model_file}.pt")
 agent = Agent64(agent_config_filepath)
 result_load = agent.load(checkpoint_filepath)
 assert result_load
@@ -46,18 +46,21 @@ while not done:
 
     if action is None or t % frame_skip == 0:
         action = agent.get_action(custom_obs, normalized=True)
+        unnorm_action = agent.get_action(custom_obs, normalized=False)
 
-    steering_history.append(action["steering"])
-    speed_history.append(action["speed"])
+    steering_history.append(unnorm_action["steering"])
+    speed_history.append(unnorm_action["speed"])
 
     obs, rewards, done, states = env.step(action)
+    time.sleep(0.01)
     t += 1
 
 env.close()
 
-
 import matplotlib.pyplot as plt
 
-plt.plot(steering_history, label="steering")
-plt.plot(speed_history, label="speed")
+times = np.linspace(0, 0.01 * (t + 1), t)
+plt.plot(times, steering_history, label="steering")
+plt.plot(times, speed_history, label="speed")
+plt.legend()
 plt.show()

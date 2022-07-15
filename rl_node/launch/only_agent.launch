@@ -1,9 +1,10 @@
 <?xml version="1.0" encoding="utf-8"?>
 
 <launch>
+    <arg name="params" default="params_sim.yaml" doc="agent configuration file"/>
 
-    <node pkg="reward_shaping_node" type="node.py" name="reward_shaping_node" output="screen">
-        <rosparam command="load" file="$(find reward_shaping_node)/config/params.yaml"/>
-    </node>
+    <node pkg="rl_node" type="docker_starter.sh" name="rl_node" output="screen">
+        <rosparam command="load" file="$(find rl_node)/cfg/$(arg params)"/>
+    </node>>
 
 </launch>

@@ -1,0 +1,2 @@
+stable-baselines3==1.5.0
+torch==1.10.0

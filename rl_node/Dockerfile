@@ -37,16 +37,10 @@ RUN apt-get update && apt install -y curl build-essential
 RUN curl https://bootstrap.pypa.io/get-pip.py -o get-pip.py
 RUN python3 get-pip.py
 
-# setup entrypoint
+# install dependencies
 COPY . /rl_node
 WORKDIR /rl_node
-
-# install dependencies
 RUN pip install -r requirements.txt
 
-# create workspace
-RUN mkdir -p /catkin_ws/src
-RUN ln -s /rl_node /catkin_ws/src
-
-ENTRYPOINT ["/reward_shaping_node/ros_entrypoint.sh"]
-CMD ["bash"]
+ENTRYPOINT ["./ros_entrypoint.sh"]
+CMD ["python3", "src/node.py"]

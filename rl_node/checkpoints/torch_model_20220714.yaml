@@ -1,3 +1,5 @@
+policy_class: SACMlpPolicy
+
 observation_config:
   scan_size: 64
   min_range: 0.0
