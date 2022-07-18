@@ -43,5 +43,7 @@ COPY . /rl_node
 WORKDIR /rl_node
 RUN pip install -r requirements.txt
 
+EXPOSE 11311
+
 ENTRYPOINT ["./ros_entrypoint.sh"]
 CMD ["python3", "src/node.py"]

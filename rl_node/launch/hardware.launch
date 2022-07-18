@@ -13,6 +13,7 @@
     <include file="$(find phidgets_spatial)/launch/spatial.launch"></include>
 
     <!-- Launch controller node -->
+    <remap from="drive" to="vesc/high_level/ackermann_cmd_mux/input/nav_0" />
     <include file="$(find rl_node)/launch/only_agent.launch">
         <arg name="params" value="params_hw.yaml"></arg>
     </include>

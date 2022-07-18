@@ -1,5 +1,5 @@
 scan_topic: scan
-nav_topic: drive
+nav_topic: /vesc/high_level/ackermann_cmd_mux/input/nav_0
 odom_topic: odom
 model: torch_model_20220714
 
