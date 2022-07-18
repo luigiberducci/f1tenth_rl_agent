@@ -105,7 +105,7 @@ class AgentNode:
         speed = self.config.debug_speed if self.config.debug_mode else speed
 
         self._drive(steer, speed)
-        rospy.loginfo(f"Action: angle: {steer}, speed: {speed}\n")
+        rospy.loginfo(f"Topic: {self.config.drive_topic}, Action: angle: {steer}, speed: {speed}\n")
 
     @staticmethod
     def adaptation(steer, speed, speed_multiplier, steering_multiplier):
