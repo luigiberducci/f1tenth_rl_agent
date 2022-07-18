@@ -3,8 +3,9 @@
 <launch>
     <arg name="params" default="params_sim.yaml" doc="agent configuration file"/>
 
+    <rosparam command="load" file="$(find rl_node)/cfg/$(arg params)"/>
+
     <node pkg="rl_node" type="docker_starter.sh" name="node" output="screen">
-        <rosparam command="load" file="$(find rl_node)/cfg/$(arg params)"/>
     </node>>
 
 </launch>

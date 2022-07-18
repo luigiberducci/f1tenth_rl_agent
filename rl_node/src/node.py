@@ -53,17 +53,17 @@ class AgentNode:
 
     def read_params(self):
         config = self.NodeConfig()
-        config.scan_topic = rospy.get_param("/node/scan_topic", default="/scan")
-        config.odom_topic = rospy.get_param("/node/odom_topic", default="/odom")
-        config.drive_topic = rospy.get_param("/node/nav_topic", default="/drive")
-        config.model_file = rospy.get_param('/node/model', default='torch_model_20220714')
+        config.scan_topic = rospy.get_param("/scan_topic", default="/scan")
+        config.odom_topic = rospy.get_param("/odom_topic", default="/odom")
+        config.drive_topic = rospy.get_param("/nav_topic", default="/drive")
+        config.model_file = rospy.get_param('/model', default='torch_model_20220714')
 
-        config.frame_skip = rospy.get_param('/node/frame_skip', default=10)
-        config.steering_multiplier = rospy.get_param('/node/steering_multiplier', default=1.0)
-        config.speed_multiplier = rospy.get_param('/node/speed_multiplier', default=1.0)
+        config.frame_skip = rospy.get_param('/frame_skip', default=10)
+        config.steering_multiplier = rospy.get_param('/steering_multiplier', default=1.0)
+        config.speed_multiplier = rospy.get_param('/speed_multiplier', default=1.0)
 
-        config.debug_mode = rospy.get_param('/node/debug_mode', default=False)
-        config.debug_speed = rospy.get_param('/node/debug_speed', default=1.0)
+        config.debug_mode = rospy.get_param('/debug_mode', default=False)
+        config.debug_speed = rospy.get_param('/debug_speed', default=1.0)
         return config
 
     def build_agent(self, model_file):
