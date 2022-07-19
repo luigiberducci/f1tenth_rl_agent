@@ -4,8 +4,8 @@ odom_topic: /filter/odom
 model: torch_model_20220714
 
 frame_skip: 10
-steering_multiplier: 0.70
-speed_multiplier: 1.00
+steering_multiplier: 0.50
+speed_multiplier: 0.75
 
-debug_mode: True
+debug_mode: False
 debug_speed: 1.0
