@@ -44,7 +44,7 @@ class FilterNode:
     def imu_callback(self, data):
         """ store the current acceleration from imu """
         self._accx = data.linear_acceleration.x
-        dt = (data.header.stamp - self._time)
+        dt = (data.header.stamp - self._time).to_sec()
         self._filtered_vel += dt * self._accx   # estimate velocity
         self._pub_velocity(self._filtered_vel)  # publish new odom
         self._time = rospy.Time.now()
