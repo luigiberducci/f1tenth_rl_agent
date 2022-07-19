@@ -11,9 +11,14 @@ class FilterNode:
 
     @dataclass
     class FilterNodeConfig:
+        # topics
         odom_topic: str = "/odom"
         imu_topic: str = "/imu/data"
         filter_topic: str = "/filter/odom"
+
+        # filter
+        velx_threshold: float = 0.10
+        accx_threshold: float = 0.25
 
         def update(self, params: dict):
             for k, v in params.items():
@@ -38,15 +43,19 @@ class FilterNode:
     def odom_callback(self, data):
         """ store the current speed from vesc """
         velx = data.twist.twist.linear.x
-        velx = 0.0 if abs(velx) < 0.1 else velx
+        velx = 0.0 if abs(velx) < self.config.velx_threshold else velx
         self._velx = velx
 
     def imu_callback(self, data):
         """ store the current acceleration from imu """
-        self._accx = data.linear_acceleration.x
+        accx = data.linear_acceleration.x
+        accx = 0.0 if abs(accx) < self.config.accx_threshold else accx
         dt = (data.header.stamp - self._time).to_sec()
-        self._filtered_vel += dt * self._accx   # estimate velocity
-        self._pub_velocity(self._filtered_vel)  # publish new odom
+        # estimate and publish velocity
+        self._filtered_vel += dt * self._accx
+        self._pub_velocity(self._filtered_vel)
+        # update info
+        self._accx = accx
         self._time = rospy.Time.now()
 
     def _pub_velocity(self, velx):
