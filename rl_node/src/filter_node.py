@@ -35,6 +35,7 @@ class FilterNode:
         self.filter_pub = rospy.Publisher(self.config.filter_topic, Odometry, queue_size=1)
 
         # Internal variables
+        self._first_callback = True
         self._velx = 0.0
         self._accx = 0.0
         self._filtered_vel = 0.0
@@ -76,6 +77,10 @@ class FilterNode:
         self.filter_pub.publish(odom_msg)
 
     def reconfigure_callback(self, config, level):
+        if self._first_callback:
+            rospy.loginfo(f"Skip First Reconfigure Request")
+            self._first_callback = False
+            return self.config
         rospy.loginfo(f"Reconfigure Request:")
         rospy.loginfo("\n\t" + "\n\t".join([f"{k}: {v}" for k, v in config.items() if k != "groups"]))
         self.config.update(config)
