@@ -17,6 +17,7 @@ class FilterNode:
         filter_topic: str = "/filter/odom"
 
         # filter
+        use_imu: bool = False
         velx_threshold: float = 0.10
         accx_threshold: float = 0.25
 
@@ -60,9 +61,14 @@ class FilterNode:
         """ store the current acceleration from imu """
         accx = data.linear_acceleration.x
         accx = 0.0 if abs(accx) < self.config.accx_threshold else accx
-        dt = (data.header.stamp - self._time).to_sec()
-        # estimate and publish velocity
-        self._filtered_vel += dt * self._accx
+
+        if self.config.use_imu:
+            # integrate velocity over time
+            dt = (data.header.stamp - self._time).to_sec()
+            self._filtered_vel += dt * self._accx
+        else:
+            # use vesc commands
+            self._filtered_vel = self._velx
         self._pub_velocity(self._filtered_vel)
         # update info
         self._accx = accx
