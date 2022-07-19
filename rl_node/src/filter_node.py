@@ -5,10 +5,10 @@ from dataclasses import dataclass
 import rospy
 from sensor_msgs.msg import Imu
 from nav_msgs.msg import Odometry
+from ddynamic_reconfigure_python.ddynamic_reconfigure import DDynamicReconfigure
 
 
 class FilterNode:
-
     @dataclass
     class FilterNodeConfig:
         # topics
@@ -27,7 +27,7 @@ class FilterNode:
 
     def __init__(self):
         # Read params
-        self.config = self.FilterNodeConfig()
+        self.config = self.read_params()
 
         # Topics & Subscriptions,Publishers
         self.odom_sub = rospy.Subscriber(self.config.odom_topic, Odometry, self.odom_callback, queue_size=1)
@@ -39,6 +39,15 @@ class FilterNode:
         self._accx = 0.0
         self._filtered_vel = 0.0
         self._time = rospy.Time.now()
+
+    def read_params(self):
+        config = self.FilterNodeConfig()
+        config.odom_topic = rospy.get_param("/filter_node/odom_topic", default="/vesc/odom")
+        config.imu_topic = rospy.get_param("/filter_node/imu_topic", default="/imu/data")
+        config.filter_topic = rospy.get_param("/filter_node/filter_topic", default="/filter/odom")
+        config.velx_threshold = rospy.get_param('/filter_node/velx_threshold', default=0.0)
+        config.accx_threshold = rospy.get_param('/filter_node/accx_threshold', default=0.0)
+        return config
 
     def odom_callback(self, data):
         """ store the current speed from vesc """
@@ -66,12 +75,30 @@ class FilterNode:
         odom_msg.twist.twist.linear.x = velx
         self.filter_pub.publish(odom_msg)
 
-
+    def reconfigure_callback(self, config, level):
+        rospy.loginfo(f"Reconfigure Request:")
+        rospy.loginfo("\n\t" + "\n\t".join([f"{k}: {v}" for k, v in config.items() if k != "groups"]))
+        self.config.update(config)
+        return config
 
 
 def main(args):
     rospy.init_node("node", anonymous=True)
     node = FilterNode()
+
+    # Create a D(ynamic)DynamicReconfigure
+    ddynrec = DDynamicReconfigure("dyn_rec")
+
+    # Add variables (name, description, default value, min, max, edit_method)
+    ddynrec.add_variable("odom_topic", "string variable", "/vesc/odom")
+    ddynrec.add_variable("imu_topic", "string variable", "/imu/data")
+    ddynrec.add_variable("filter_topic", "string variable", "/filter/odom")
+
+    ddynrec.add_variable("velx_threshold", "float/double variable", 0.0, 0.0, 1.0)
+    ddynrec.add_variable("accx_threshold", "float/double variable", 0.0, 0.0, 1.0)
+
+    # Start the server
+    ddynrec.start(callback=node.reconfigure_callback)
 
     rospy.sleep(0.1)
     rospy.spin()
