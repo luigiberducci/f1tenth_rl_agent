@@ -16,7 +16,9 @@
     <node pkg="rl_node" type="safety_node.py" name="safety_node" output="screen"/>
 
     <!-- Launch velocity filter -->
-    <node pkg="rl_node" type="filter_node.py" name="filter_node" output="screen"/>
+    <node pkg="rl_node" type="filter_node.py" name="filter_node" output="screen">
+        <rosparam command="load" file="$(find rl_node)/cfg/filter_node.yaml"/>
+    </node>
 
     <!-- Launch controller node -->
     <remap from="drive" to="vesc/high_level/ackermann_cmd_mux/input/nav_0" />
