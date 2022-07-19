@@ -1,0 +1,6 @@
+venv
+test
+checkpoints/sb3
+utils_convert
+**/__pycache__
+**/.*

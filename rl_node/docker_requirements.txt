@@ -1,0 +1,7 @@
+#stable-baselines3==1.5.0
+--extra-index-url https://download.pytorch.org/whl/cpu
+torch==1.10.0
+numpy==1.23.1
+PyYAML
+marshmallow-dataclass
+git+https://github.com/pal-robotics/ddynamic_reconfigure_python.git
