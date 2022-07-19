@@ -46,6 +46,7 @@ class AgentNode:
         self.drive_pub = rospy.Publisher(self.config.drive_topic, AckermannDriveStamped, queue_size=1)
 
         # Internal variables
+        self._first_callback = True
         self.agent = None
         self._model_is_loaded = False
         self._current_speed = 0.0
@@ -123,6 +124,10 @@ class AgentNode:
         self.drive_pub.publish(drive_msg)
 
     def reconfigure_callback(self, config, level):
+        if self._first_callback:
+            rospy.loginfo(f"Skip First Reconfigure Request")
+            self._first_callback = False
+            return config
         rospy.loginfo(f"Reconfigure Request:")
         rospy.loginfo("\n\t" + "\n\t".join([f"{k}: {v}" for k, v in config.items() if k != "groups"]))
         self.config.update(config)
@@ -138,7 +143,7 @@ def main(args):
     node = AgentNode()
 
     # Create a D(ynamic)DynamicReconfigure
-    ddynrec = DDynamicReconfigure("example_dyn_rec")
+    ddynrec = DDynamicReconfigure("dyn_rec")
 
     # Add variables (name, description, default value, min, max, edit_method)
     ddynrec.add_variable("model_file", "string variable", "")
