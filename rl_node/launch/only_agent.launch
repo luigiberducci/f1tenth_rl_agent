@@ -4,7 +4,7 @@
     <arg name="params" default="params_sim.yaml" doc="agent configuration file"/>
 
 
-    <rosparam command="load" file="$(find rl_node)/cfg/$(arg params)" namespace="node"/>
+    <rosparam command="load" file="$(find rl_node)/cfg/$(arg params)" ns="node"/>
 
     <node pkg="rl_node" type="docker_starter.sh" name="rl_agent" output="screen">
     </node>
