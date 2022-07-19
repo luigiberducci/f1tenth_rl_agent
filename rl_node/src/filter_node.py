@@ -80,7 +80,7 @@ class FilterNode:
         if self._first_callback:
             rospy.loginfo(f"Skip First Reconfigure Request")
             self._first_callback = False
-            return self.config
+            return config
         rospy.loginfo(f"Reconfigure Request:")
         rospy.loginfo("\n\t" + "\n\t".join([f"{k}: {v}" for k, v in config.items() if k != "groups"]))
         self.config.update(config)
