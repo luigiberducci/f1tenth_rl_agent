@@ -5,7 +5,7 @@
 
     <rosparam command="load" file="$(find rl_node)/cfg/$(arg params)"/>
 
-    <node pkg="rl_node" type="docker_starter.sh" name="node" output="screen">
+    <node pkg="rl_node" type="docker_starter.sh" name="rl_agent" output="screen">
     </node>>
 
 </launch>
