@@ -1,0 +1,6 @@
+odom_topic: /vesc/odom
+imu_topic: /imu/data
+filter_topic: /filter/odom
+
+velx_threshold: 0.10
+accx_threshold: 0.25
