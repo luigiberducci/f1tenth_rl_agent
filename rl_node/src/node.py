@@ -27,6 +27,7 @@ class AgentNode:
         frame_skip: int = 10
         steering_multiplier: float = 1.0
         speed_multiplier: float = 1.0
+        min_speed: float = 1.0
 
         debug_mode: bool = False
         debug_speed: float = 1.0
@@ -102,15 +103,16 @@ class AgentNode:
         action = self.agent.get_action(observation, normalized=False)
         steer, speed = action["steering"], action["speed"]
 
-        steer, speed = self.adaptation(steer, speed, self.config.speed_multiplier, self.config.steering_multiplier)
+        steer, speed = self.adaptation(steer, speed, self.config.speed_multiplier, self.config.steering_multiplier, self.config.min_speed)
         speed = self.config.debug_speed if self.config.debug_mode else speed
 
         self._drive(steer, speed)
         rospy.loginfo(f"Topic: {self.config.drive_topic}, Action: angle: {steer}, speed: {speed}\n")
 
     @staticmethod
-    def adaptation(steer, speed, speed_multiplier, steering_multiplier):
+    def adaptation(steer, speed, speed_multiplier, steering_multiplier, min_speed):
         speed *= speed_multiplier
+        speed = max(speed, min_speed)
         steer *= steering_multiplier
         return steer, speed
 
@@ -151,6 +153,7 @@ def main(args):
     ddynrec.add_variable("frame_skip", "integer variable", 10, 1, 100)
     ddynrec.add_variable("steering_multiplier", "float/double variable", 1.0, 0.0, 1.0)
     ddynrec.add_variable("speed_multiplier", "float/double variable", 1.0, 0.0, 1.0)
+    ddynrec.add_variable("min_speed", "float/double variable", 1.0, 0.0, 2.0)
 
     ddynrec.add_variable("debug_mode", "bool variable", True)
     ddynrec.add_variable("debug_speed", "float/double variable", 1.5, 0.0, 3.0)
