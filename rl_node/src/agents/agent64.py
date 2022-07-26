@@ -17,6 +17,11 @@ class ActionConfig:
     max_steering: float = None
     min_speed: float = None
     max_speed: float = None
+    cap_max_speed: float = None
+    cap_min_speed: float = None
+    delta_speed: bool = None
+    dt: float = None
+    max_accx: float = None
 
 
 @dataclass
@@ -24,7 +29,8 @@ class ObservationConfig:
     scan_size: int = None
     min_range: float = None
     max_range: float = None
-    n_last_cmd: int = None
+    n_last_actions: int = None
+    n_last_observations: int = None
 
 
 @dataclass
@@ -47,7 +53,7 @@ class Agent64(Agent):
         self.reset()
 
     def reset(self):
-        n_last_actions = self.config.observation_config.n_last_cmd
+        n_last_actions = self.config.observation_config.n_last_actions
         self._last_actions = collections.deque([[0.0] * 2] * n_last_actions, maxlen=n_last_actions)
 
     def load(self, model_filepath: pathlib.Path) -> bool:
