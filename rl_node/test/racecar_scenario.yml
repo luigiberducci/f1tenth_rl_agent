@@ -9,4 +9,4 @@ agents:
       color: blue
     task:
       task_name: maximize_progress
-      params: {laps: 2, time_limit: 180.0, terminate_on_collision: False}
+      params: {laps: 1, time_limit: 180.0, terminate_on_collision: False}
