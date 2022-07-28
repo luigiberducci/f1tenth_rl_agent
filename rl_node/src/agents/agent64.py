@@ -4,12 +4,15 @@ from typing import Dict
 
 from dataclasses import dataclass
 import marshmallow_dataclass
+import stable_baselines3
 import torch
 
 import yaml
 
 from .agent import Agent
 from .utils import *
+from ...policies import SACPolicy, SACMlpPolicy
+
 
 @dataclass
 class ActionConfig:
@@ -69,12 +72,17 @@ class Agent64(Agent):
         self.model.eval()
         return True
 
-    def get_action(self, observation: Dict[str, float], normalized=False) -> Dict[str, float]:
+    def get_action(self, observation: Dict[str, float]) -> Dict[str, float]:
         observation_proc = self.preprocess_observation(observation)
 
-        observation_proc = torch.tensor(observation_proc, requires_grad=False)
-        flat_action = self.model(observation_proc, deterministic=True)
-        flat_action = flat_action.detach().numpy()
+        if isinstance(self.model, torch.nn.Module):
+            observation_proc = torch.tensor(observation_proc, requires_grad=False)
+            flat_action = self.model(observation_proc, deterministic=True)
+            flat_action = flat_action.detach().numpy()
+        else:
+            # assume sb3 model
+            assert self.model.observation_space.contains(observation_proc), f"invalid observation:\n{observation_proc}"
+            flat_action, _ = self.model.predict(observation_proc, deterministic=True)
 
         self._last_actions.append(flat_action)
 
@@ -83,16 +91,14 @@ class Agent64(Agent):
         if self.config.action_config.delta_speed:
             norm_speed = self.compute_speed_from_delta(norm_speed)
 
-        if normalized:
-            speed, steer = norm_speed, norm_steering
-        else:
-            speed = linear_scaling(norm_speed,
-                                   [-1, +1],
-                                   [self.config.action_config.min_speed, self.config.action_config.max_speed])
-            steer = linear_scaling(norm_steering,
-                                   [-1, +1],
-                                   [self.config.action_config.min_steering, self.config.action_config.max_steering])
-        return {"speed": speed, "steering": steer}
+        speed = linear_scaling(norm_speed,
+                               [-1, +1],
+                               [self.config.action_config.min_speed, self.config.action_config.max_speed])
+        steer = linear_scaling(norm_steering,
+                               [-1, +1],
+                               [self.config.action_config.min_steering, self.config.action_config.max_steering])
+
+        return {"speed": norm_speed, "steering": norm_steering}, {"speed": speed, "steering": steer}
 
     def preprocess_observation(self, observation: Dict[str, float]):
         ranges = np.array(observation["lidar"], dtype=np.float32)
@@ -123,14 +129,14 @@ class Agent64(Agent):
         # flat observations
         flat_observation = np.concatenate([
             last_actions,
-            proc_ranges,
-            velocity,
             last_lidars,
             last_velxs,
             ], axis=0)
         return flat_observation
 
     def compute_speed_from_delta(self, delta_speed):
+        if not self.config.action_config.delta_speed:
+            raise ValueError("trying to compute delta-speed in model trained without delta-speed")
         max_delta_speed = self.config.action_config.max_accx * self.config.action_config.frame_skip * self.config.action_config.dt
         delta_speed = delta_speed * max_delta_speed     # ranges in +-max delta speed
 
