@@ -37,7 +37,7 @@ def sanity_check(sb3_model, torch_model, n_repeats, debug=False):
         dummy_input = torch.randn(1, observation_size).to("cpu")
         dummy_input = torch.clip(dummy_input, -1, +1)
 
-        new_output = torch_model(dummy_input, deterministic=True).numpy()
+        new_output = torch_model(dummy_input).numpy()
         original_output, _ = sb3_model.predict(dummy_input, deterministic=True)
 
         if debug:

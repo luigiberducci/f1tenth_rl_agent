@@ -5,12 +5,14 @@ from racecar_gym import SingleAgentScenario
 from racecar_gym.envs import gym_api
 import time
 import numpy as np
+from stable_baselines3 import SAC
 
 from rl_node.src.agents.agent64 import Agent64
 
 env = gym.make("SingleAgentLecture_hall_Gui-v0")
 
-model_file = "torch_model_20220714"
+model_name = "model_delta_20220726"
+model_file = f"torch_{model_name}"
 frame_skip = 10
 
 # make env
@@ -26,6 +28,8 @@ checkpoint_filepath = pathlib.Path(f"../checkpoints/{model_file}.pt")
 agent = Agent64(agent_config_filepath)
 result_load = agent.load(checkpoint_filepath)
 assert result_load
+
+sb3_agent = SAC.load(f"../checkpoints/sb3/{model_name}.zip")
 
 done = False
 
@@ -45,7 +49,10 @@ while not done:
                   "velocity": obs["velocity"][0]}
 
     if action is None or t % frame_skip == 0:
-        action = agent.get_action(custom_obs, normalized=True)
+        observation = agent.preprocess_observation(custom_obs)
+        action, _ = sb3_agent.predict(observation, deterministic=True)
+        action = {"steering": action[1], "speed": agent.compute_speed_from_delta(action[0])}
+        #action = agent.get_action(custom_obs, normalized=True)
         unnorm_action = agent.get_action(custom_obs, normalized=False)
 
     steering_history.append(unnorm_action["steering"])
