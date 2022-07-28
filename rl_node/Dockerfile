@@ -41,7 +41,8 @@ RUN python3 get-pip.py
 # install dependencies
 COPY . /rl_node
 WORKDIR /rl_node
-RUN pip install -r docker_requirements.txt
+RUN pip install --upgrade pip
+RUN pip install -r requirements.txt
 
 EXPOSE 11311
 

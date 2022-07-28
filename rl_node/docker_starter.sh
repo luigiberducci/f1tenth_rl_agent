@@ -1,7 +1,7 @@
 #!/bin/bash
 
 
-IMAGE_NAME="luigi/rl_node:latest"
+IMAGE_NAME="racecar/rl_node:latest"
 PY_CMD="python3 /rl_node/src/node.py"
 NODE_DIR=$(rospack find rl_node)
 

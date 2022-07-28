@@ -6,7 +6,7 @@ import torch
 
 import argparse
 
-from rl_node.policies.SACPolicy import SACMlpPolicy
+from rl_node.policies import SACMlpPolicy
 
 
 def main(args):

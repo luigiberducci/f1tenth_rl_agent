@@ -100,8 +100,8 @@ class AgentNode:
         self._last_time = rospy.Time.now()
 
         observation = {"lidar": data.ranges, "velocity": self._current_speed}
-        action = self.agent.get_action(observation, normalized=False)
-        steer, speed = action["steering"], action["speed"]
+        norm_action, unnorm_action = self.agent.get_action(observation)
+        steer, speed = unnorm_action["steering"], unnorm_action["speed"]
 
         steer, speed = self.adaptation(steer, speed, self.config.speed_multiplier, self.config.steering_multiplier, self.config.min_speed)
         speed = self.config.debug_speed if self.config.debug_mode else speed
@@ -137,10 +137,6 @@ class AgentNode:
 
 
 def main(args):
-    # param_file = pathlib.Path("cfg/simulation_params.yaml")
-    # result_load = load_params(param_file)
-    # assert result_load, "failed to load parameters"
-
     rospy.init_node("node", anonymous=True)
     node = AgentNode()
 

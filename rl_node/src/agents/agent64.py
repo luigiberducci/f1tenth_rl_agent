@@ -1,17 +1,15 @@
 import collections
 import pathlib
-from typing import Dict
+from typing import Dict, Tuple
 
 from dataclasses import dataclass
 import marshmallow_dataclass
-import stable_baselines3
 import torch
 
 import yaml
 
 from .agent import Agent
 from .utils import *
-from ...policies import SACPolicy, SACMlpPolicy
 
 
 @dataclass
@@ -72,7 +70,7 @@ class Agent64(Agent):
         self.model.eval()
         return True
 
-    def get_action(self, observation: Dict[str, float]) -> Dict[str, float]:
+    def get_action(self, observation: Dict[str, float]) -> Tuple[Dict[str, float], Dict[str, float]]:
         observation_proc = self.preprocess_observation(observation)
 
         if isinstance(self.model, torch.nn.Module):
@@ -84,10 +82,7 @@ class Agent64(Agent):
             assert self.model.observation_space.contains(observation_proc), f"invalid observation:\n{observation_proc}"
             flat_action, _ = self.model.predict(observation_proc, deterministic=True)
 
-        self._last_actions.append(flat_action)
-
         norm_speed, norm_steering = flat_action
-
         if self.config.action_config.delta_speed:
             norm_speed = self.compute_speed_from_delta(norm_speed)
 
@@ -98,7 +93,13 @@ class Agent64(Agent):
                                [-1, +1],
                                [self.config.action_config.min_steering, self.config.action_config.max_steering])
 
-        return {"speed": norm_speed, "steering": norm_steering}, {"speed": speed, "steering": steer}
+        # note: action-history wrapper is called after delta-speed transform, and uses (steer, speed)
+        self._last_actions.append(np.array([norm_steering, norm_speed]))
+
+        # return both normalized and unnormalized actions
+        norm_action = {"speed": norm_speed, "steering": norm_steering}
+        unnorm_action = {"speed": speed, "steering": steer}
+        return norm_action, unnorm_action
 
     def preprocess_observation(self, observation: Dict[str, float]):
         ranges = np.array(observation["lidar"], dtype=np.float32)
@@ -132,6 +133,7 @@ class Agent64(Agent):
             last_lidars,
             last_velxs,
             ], axis=0)
+
         return flat_observation
 
     def compute_speed_from_delta(self, delta_speed):
