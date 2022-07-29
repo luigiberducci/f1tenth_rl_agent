@@ -41,51 +41,51 @@ def check_dict_actions(action1: Dict[str, float], action2: Dict[str, float], tol
     return True
 
 
-def generic_test(model_filename: str):
+def generic_test(model_filename: str, n_episodes: int):
     env = make_env()
+    env.seed(0)
+
     agent, sb3_agent = make_agents(model_filename)
 
     frame_skip = 10
-
-    done = False
-
-    env.seed(0)
-    #check_env(env)
-
-    obs = env.reset(mode='grid')
-    t = 0
-    action = unnorm_action = None
 
     steering_history = []
     speed_history = []
     actual_speed_history = []
 
-    while not done: # and t < 100:
-        custom_obs = {"lidar": obs["lidar"],
-                      "velocity": obs["velocity"][0]}
+    for i in range(n_episodes):
+        obs = env.reset(mode='grid')
+        done = False
+        t = 0
+        action = unnorm_action = None
 
-        if action is None or t % frame_skip == 0:
-            norm_action1, action1 = sb3_agent.get_action(custom_obs)
-            norm_action2, action2 = agent.get_action(custom_obs)
 
-            assert check_dict_actions(action1, action2), f"action differs, action != sb3_action\n{action1} != {action2}"
-            action = norm_action1
-            unnorm_action = action1
+        while not done:
+            custom_obs = {"lidar": obs["lidar"],
+                          "velocity": obs["velocity"][0]}
 
-        steering_history.append(unnorm_action["steering"])
-        speed_history.append(unnorm_action["speed"])
-        actual_speed_history.append(obs["velocity"][0])
+            if action is None or t % frame_skip == 0:
+                norm_action1, action1 = sb3_agent.get_action(custom_obs)
+                norm_action2, action2 = agent.get_action(custom_obs)
 
-        obs, rewards, done, states = env.step(action)
-        #time.sleep(0.01)
-        t += 1
+                assert check_dict_actions(action1, action2), f"action differs, action != sb3_action\n{action1} != {action2}"
+                action = norm_action1
+                unnorm_action = action1
 
-    print(f"[info] simulation time: {obs['time']}")
+            steering_history.append(unnorm_action["steering"])
+            speed_history.append(unnorm_action["speed"])
+            actual_speed_history.append(obs["velocity"][0])
+
+            obs, rewards, done, states = env.step(action)
+            #time.sleep(0.01)
+            t += 1
+
+        print(f"[info] episode: {i+1}, simulation time: {obs['time']}")
     env.close()
 
     import matplotlib.pyplot as plt
 
-    times = np.linspace(0, 0.01 * (t + 1), t)
+    times = np.linspace(0, 0.01 * n_episodes * (t + 1), t)
     plt.plot(times, steering_history, label="steering cmd")
     plt.plot(times, speed_history, label="speed cmd")
     plt.plot(times, actual_speed_history, label="actual speed")
@@ -103,6 +103,7 @@ if __name__=="__main__":
 
     parser = argparse.ArgumentParser()
     parser.add_argument("--model_filename", "-f", type=pathlib.Path, required=True)
+    parser.add_argument("--n_episodes", "-n", type=int, default=1)
     args = parser.parse_args()
 
-    generic_test(args.model_filename)
+    generic_test(args.model_filename, n_episodes=args.n_episodes)
