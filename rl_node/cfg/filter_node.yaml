@@ -1,6 +1,9 @@
 odom_topic: /vesc/odom
 imu_topic: /imu/data
 filter_topic: /filter/odom
+velx_topic: /filter/velx
+
+odom_velx_multiplier: 1.0       # vel_odom = multiplier * vesc.odom.linear.x    
 
 use_imu: False
 velx_threshold: 0.10

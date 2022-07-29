@@ -70,7 +70,7 @@ class Agent64(Agent):
         self.model.eval()
         return True
 
-    def get_action(self, observation: Dict[str, float]) -> Tuple[Dict[str, float], Dict[str, float]]:
+    def get_action(self, observation: Dict[str, float], config) -> Tuple[Dict[str, float], Dict[str, float]]:
         observation_proc = self.preprocess_observation(observation)
 
         if isinstance(self.model, torch.nn.Module):
@@ -93,6 +93,16 @@ class Agent64(Agent):
                                [-1, +1],
                                [self.config.action_config.min_steering, self.config.action_config.max_steering])
 
+        steer, speed = self.adaptation(steer, speed, config.speed_multiplier, config.steering_multiplier, config.min_speed)
+        speed = config.debug_speed if config.debug_mode else speed
+
+        norm_speed = linear_scaling(speed,
+                               [self.config.action_config.min_speed, self.config.action_config.max_speed],
+                               [-1, +1])
+        norm_steer = linear_scaling(steer,
+                               [self.config.action_config.min_steering, self.config.action_config.max_steering],
+                               [-1, +1])
+
         # note: action-history wrapper is called after delta-speed transform, and uses (steer, speed)
         self._last_actions.append(np.array([norm_steering, norm_speed]))
 
@@ -100,6 +110,13 @@ class Agent64(Agent):
         norm_action = {"speed": norm_speed, "steering": norm_steering}
         unnorm_action = {"speed": speed, "steering": steer}
         return norm_action, unnorm_action
+
+    @staticmethod
+    def adaptation(steer, speed, speed_multiplier, steering_multiplier, min_speed):
+        speed *= speed_multiplier
+        speed = max(speed, min_speed)
+        steer *= steering_multiplier
+        return steer, speed
 
     def preprocess_observation(self, observation: Dict[str, float]):
         ranges = np.array(observation["lidar"], dtype=np.float32)

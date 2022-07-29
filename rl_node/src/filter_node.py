@@ -5,6 +5,7 @@ from dataclasses import dataclass
 import rospy
 from sensor_msgs.msg import Imu
 from nav_msgs.msg import Odometry
+from std_msgs.msg import Float32
 from ddynamic_reconfigure_python.ddynamic_reconfigure import DDynamicReconfigure
 
 
@@ -15,8 +16,10 @@ class FilterNode:
         odom_topic: str = "/odom"
         imu_topic: str = "/imu/data"
         filter_topic: str = "/filter/odom"
+        velx_topic: str = "/filter/odom"
 
         # filter
+        odom_velx_multiplier: float = 1.0
         use_imu: bool = False
         velx_threshold: float = 0.10
         accx_threshold: float = 0.25
@@ -34,6 +37,7 @@ class FilterNode:
         self.odom_sub = rospy.Subscriber(self.config.odom_topic, Odometry, self.odom_callback, queue_size=1)
         self.imu_sub = rospy.Subscriber(self.config.imu_topic, Imu, self.imu_callback, queue_size=1)
         self.filter_pub = rospy.Publisher(self.config.filter_topic, Odometry, queue_size=1)
+        self.velx_pub = rospy.Publisher(self.config.velx_topic, Float32, queue_size=1)
 
         # Internal variables
         self._first_callback = True
@@ -47,6 +51,8 @@ class FilterNode:
         config.odom_topic = rospy.get_param("/filter_node/odom_topic", default="/vesc/odom")
         config.imu_topic = rospy.get_param("/filter_node/imu_topic", default="/imu/data")
         config.filter_topic = rospy.get_param("/filter_node/filter_topic", default="/filter/odom")
+        config.velx_topic = rospy.get_param("/filter_node/velx_topic", default="/filter/velx")
+        config.odom_velx_multiplier = rospy.get_param('/filter_node/odom_velx_multiplier', default=1.0)
         config.velx_threshold = rospy.get_param('/filter_node/velx_threshold', default=0.0)
         config.accx_threshold = rospy.get_param('/filter_node/accx_threshold', default=0.0)
         return config
@@ -55,6 +61,7 @@ class FilterNode:
         """ store the current speed from vesc """
         velx = data.twist.twist.linear.x
         velx = 0.0 if abs(velx) < self.config.velx_threshold else velx
+        velx = self.config.odom_velx_multiplier * velx
         self._velx = velx
 
     def imu_callback(self, data):
@@ -80,7 +87,10 @@ class FilterNode:
         odom_msg.header.stamp = rospy.Time.now()
         odom_msg.header.frame_id = "odom"
         odom_msg.twist.twist.linear.x = velx
+        velx_msg= Float32()
+        velx_msg.data = velx
         self.filter_pub.publish(odom_msg)
+        self.velx_pub.publish(velx_msg)
 
     def reconfigure_callback(self, config, level):
         if self._first_callback:

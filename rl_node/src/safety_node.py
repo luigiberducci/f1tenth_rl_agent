@@ -67,7 +67,7 @@ class Safety(object):
 
 def main():
     rospy.init_node('safety_node')
-    ttc_min = 0.2 # seconds
+    ttc_min = 0.1 # seconds
     max_deceleration = 18.0 # meters/second^2
     sn = Safety(ttc_min=ttc_min, deceleration=max_deceleration)
     rospy.spin()

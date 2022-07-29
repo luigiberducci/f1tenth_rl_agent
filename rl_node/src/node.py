@@ -63,6 +63,7 @@ class AgentNode:
         config.frame_skip = rospy.get_param('/node/frame_skip', default=10)
         config.steering_multiplier = rospy.get_param('/node/steering_multiplier', default=1.0)
         config.speed_multiplier = rospy.get_param('/node/speed_multiplier', default=1.0)
+        config.min_speed = rospy.get_param('/node/min_speed', default=1.0)
 
         config.debug_mode = rospy.get_param('/node/debug_mode', default=False)
         config.debug_speed = rospy.get_param('/node/debug_speed', default=1.0)
@@ -100,20 +101,20 @@ class AgentNode:
         self._last_time = rospy.Time.now()
 
         observation = {"lidar": data.ranges, "velocity": self._current_speed}
-        norm_action, unnorm_action = self.agent.get_action(observation)
+        norm_action, unnorm_action = self.agent.get_action(observation, self.config)
         steer, speed = unnorm_action["steering"], unnorm_action["speed"]
 
-        steer, speed = self.adaptation(steer, speed, self.config.speed_multiplier, self.config.steering_multiplier, self.config.min_speed)
-        speed = self.config.debug_speed if self.config.debug_mode else speed
+        #steer, speed = self.adaptation(steer, speed, self.config.speed_multiplier, self.config.steering_multiplier, self.config.min_speed)
+        #speed = self.config.debug_speed if self.config.debug_mode else speed
 
         self._drive(steer, speed)
         rospy.loginfo(f"Topic: {self.config.drive_topic}, Action: angle: {steer}, speed: {speed}\n")
 
     @staticmethod
     def adaptation(steer, speed, speed_multiplier, steering_multiplier, min_speed):
-        speed *= speed_multiplier
-        speed = max(speed, min_speed)
-        steer *= steering_multiplier
+        #speed *= speed_multiplier
+        #speed = max(speed, min_speed)
+        #steer *= steering_multiplier
         return steer, speed
 
     def _drive(self, angle, speed):
