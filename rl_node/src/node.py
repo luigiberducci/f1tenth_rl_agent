@@ -63,6 +63,7 @@ class AgentNode:
         config.frame_skip = rospy.get_param('/node/frame_skip', default=10)
         config.steering_multiplier = rospy.get_param('/node/steering_multiplier', default=1.0)
         config.speed_multiplier = rospy.get_param('/node/speed_multiplier', default=1.0)
+        config.min_speed = rospy.get_param('/node/min_speed', default=1.0)
 
         config.debug_mode = rospy.get_param('/node/debug_mode', default=False)
         config.debug_speed = rospy.get_param('/node/debug_speed', default=1.0)

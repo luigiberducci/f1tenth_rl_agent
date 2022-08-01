@@ -1,12 +1,12 @@
 scan_topic: scan
 nav_topic: /vesc/high_level/ackermann_cmd_mux/input/nav_0
 odom_topic: /filter/odom
-model: torch_model_100000_20220801
+model: torch_model_150000_20220801
 
 frame_skip: 10
-steering_multiplier: 0.75
+steering_multiplier: 1.00
 speed_multiplier: 1.00
-min_speed: 1.50
+min_speed: 1.00
 
 debug_mode: False
 debug_speed: 1.5
