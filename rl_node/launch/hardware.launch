@@ -13,8 +13,8 @@
     <include file="$(find phidgets_spatial)/launch/spatial.launch"></include>
 
     <!-- Launch safety node -->
-    <node pkg="rl_node" type="safety_node.py" name="safety_node" output="screen"/>
-
+   <!-- <node pkg="rl_node" type="safety_node.py" name="safety_node" output="screen"/>
+-->
     <!-- Launch velocity filter -->
     <node pkg="rl_node" type="filter_node.py" name="filter_node" output="screen">
         <rosparam command="load" file="$(find rl_node)/cfg/filter_node.yaml"/>
