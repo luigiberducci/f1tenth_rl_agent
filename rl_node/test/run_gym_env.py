@@ -13,7 +13,7 @@ from rl_node.src.agents.agent64 import Agent64
 def make_env():
     scenario = SingleAgentScenario.from_spec(
         path='racecar_scenario.yml',
-        rendering=True
+        rendering=False
     )
     env = gym_api.SingleAgentRaceEnv(scenario=scenario)
     env.seed(0)
@@ -56,6 +56,7 @@ def generic_test(model_filename: str, n_episodes: int, load_sb3: bool):
     speed_history = []
     actual_speed_history = []
 
+    n_collisions = 0
     for i in range(n_episodes):
         obs = env.reset(mode='grid')
         done = False
@@ -86,9 +87,13 @@ def generic_test(model_filename: str, n_episodes: int, load_sb3: bool):
             #time.sleep(0.01)
             t += 1
 
-        print(f"[info] episode: {i+1}, simulation time: {obs['time']}")
-    env.close()
+            if states['wall_collision']:
+                n_collisions =+1
 
+        print(f"[info] episode: {i+1}, simulation time: {obs['time']}, collision: {states['wall_collision']}")
+    env.close()
+    print(f"n_collisions: {n_collisions}")
+    """
     import matplotlib.pyplot as plt
 
     times = np.linspace(0, 0.01 * n_episodes * (t + 1), t)
@@ -97,6 +102,7 @@ def generic_test(model_filename: str, n_episodes: int, load_sb3: bool):
     plt.plot(times, actual_speed_history, label="actual speed")
     plt.legend()
     plt.show()
+    """
 
     assert True
 

@@ -1,6 +1,13 @@
 world:
   name: getreidemarkt
   reverse: True
+  domain_randomization:
+    gravity: [ -12, -9.81 ]
+    velocity_multiplier: [ 20, 25 ]
+    max_velocity: [ 3.5, 3.75 ]
+    steering_multiplier: [ 0.6, 0.75 ]
+    sensor_velocity_noise: [ 0.01, 0.05 ]
+
 agents:
   - id: A
     vehicle:
@@ -10,4 +17,4 @@ agents:
       color: blue
     task:
       task_name: maximize_progress
-      params: {laps: 1, time_limit: 180.0, terminate_on_collision: False}
+      params: {laps: 1, time_limit: 180.0, terminate_on_collision: True}

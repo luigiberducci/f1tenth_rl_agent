@@ -101,11 +101,11 @@ class AgentNode:
         self._last_time = rospy.Time.now()
 
         observation = {"lidar": data.ranges, "velocity": self._current_speed}
-        norm_action, unnorm_action = self.agent.get_action(observation, self.config)
+        norm_action, unnorm_action = self.agent.get_action(observation)
         steer, speed = unnorm_action["steering"], unnorm_action["speed"]
 
-        #steer, speed = self.adaptation(steer, speed, self.config.speed_multiplier, self.config.steering_multiplier, self.config.min_speed)
-        #speed = self.config.debug_speed if self.config.debug_mode else speed
+        steer, speed = self.adaptation(steer, speed, self.config.speed_multiplier, self.config.steering_multiplier, self.config.min_speed)
+        speed = self.config.debug_speed if self.config.debug_mode else speed
 
         self._drive(steer, speed)
         rospy.loginfo(f"Topic: {self.config.drive_topic}, Action: angle: {steer}, speed: {speed}\n")

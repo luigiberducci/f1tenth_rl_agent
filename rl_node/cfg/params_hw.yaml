@@ -1,7 +1,7 @@
 scan_topic: scan
 nav_topic: /vesc/high_level/ackermann_cmd_mux/input/nav_0
 odom_topic: /filter/odom
-model: torch_model_150000_20220801
+model: torch_multi_model_400000_steps_20220809
 
 frame_skip: 10
 

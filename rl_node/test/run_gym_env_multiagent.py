@@ -3,7 +3,7 @@ from typing import Dict
 
 import gym
 from racecar_gym import MultiAgentScenario
-from racecar_gym.agents import FollowTheGap
+from racecar_gym.agents import FollowTheGap, FollowTheWall
 from racecar_gym.envs import gym_api
 import numpy as np
 from stable_baselines3 import SAC
@@ -46,7 +46,8 @@ def generic_test(model_filename: str):
     env = make_env()
     agent, sb3_agent = make_agents(model_filename)
 
-    ftg = FollowTheGap()
+    npc = FollowTheGap()
+    #npc = FollowTheWall()
 
     frame_skip = 10
 
@@ -56,6 +57,8 @@ def generic_test(model_filename: str):
     #check_env(env)
 
     obs = env.reset(mode='grid')
+    npc.reset({"base_speed": 2.0, "variable_speed": 0.0})
+
     t = 0
     action = unnorm_action = {}
 
@@ -71,7 +74,7 @@ def generic_test(model_filename: str):
 
             if action is None or t % frame_skip == 0:
                 if agent_id == "A":
-                    norm_action, _ = ftg.get_action(custom_obs, return_norm_actions=True)
+                    norm_action, _ = npc.get_action(custom_obs, return_norm_actions=True)
                 else:
                     norm_action1, action1 = sb3_agent.get_action(custom_obs)
                     norm_action2, action2 = agent.get_action(custom_obs)
