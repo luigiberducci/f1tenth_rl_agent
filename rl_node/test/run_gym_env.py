@@ -19,7 +19,7 @@ def make_env():
     env.seed(0)
     return env
 
-def make_agents(model_name: str):
+def make_agents(model_name: str, load_sb3: bool):
     model_file = f"torch_{model_name}"  # this is the torch-jit model
     agent_config_filepath = pathlib.Path(f"../checkpoints/{model_file}.yaml")
     checkpoint_filepath = pathlib.Path(f"../checkpoints/{model_file}.pt")
@@ -27,9 +27,12 @@ def make_agents(model_name: str):
     result_load = agent.load(checkpoint_filepath)
     assert result_load
 
-    sb3_model = SAC.load(f"../checkpoints/sb3/{model_name}.zip")    # this is the baseline model
-    sb3_agent = Agent64(agent_config_filepath)
-    sb3_agent.model = sb3_model
+    if load_sb3:
+        sb3_model = SAC.load(f"../checkpoints/sb3/{model_name}.zip")    # this is the baseline model
+        sb3_agent = Agent64(agent_config_filepath)
+        sb3_agent.model = sb3_model
+    else:
+        sb3_agent = None
 
     return agent, sb3_agent
 
@@ -41,11 +44,11 @@ def check_dict_actions(action1: Dict[str, float], action2: Dict[str, float], tol
     return True
 
 
-def generic_test(model_filename: str, n_episodes: int):
+def generic_test(model_filename: str, n_episodes: int, load_sb3: bool):
     env = make_env()
     env.seed(0)
 
-    agent, sb3_agent = make_agents(model_filename)
+    agent, sb3_agent = make_agents(model_filename, load_sb3=load_sb3)
 
     frame_skip = 10
 
@@ -65,12 +68,15 @@ def generic_test(model_filename: str, n_episodes: int):
                           "velocity": obs["velocity"][0]}
 
             if action is None or t % frame_skip == 0:
-                norm_action1, action1 = sb3_agent.get_action(custom_obs)
+
                 norm_action2, action2 = agent.get_action(custom_obs)
 
-                assert check_dict_actions(action1, action2), f"action differs, action != sb3_action\n{action1} != {action2}"
-                action = norm_action1
-                unnorm_action = action1
+                if load_sb3:
+                    norm_action1, action1 = sb3_agent.get_action(custom_obs)
+                    assert check_dict_actions(action1, action2), f"action differs, action != sb3_action\n{action1} != {action2}"
+
+                action = norm_action2
+                unnorm_action = action2
 
             steering_history.append(unnorm_action["steering"])
             speed_history.append(unnorm_action["speed"])
@@ -104,6 +110,7 @@ if __name__=="__main__":
     parser = argparse.ArgumentParser()
     parser.add_argument("--model_filename", "-f", type=pathlib.Path, required=True)
     parser.add_argument("--n_episodes", "-n", type=int, default=1)
+    parser.add_argument("-no_sb3", action="store_true")
     args = parser.parse_args()
 
-    generic_test(args.model_filename, n_episodes=args.n_episodes)
+    generic_test(args.model_filename, n_episodes=args.n_episodes, load_sb3=not args.no_sb3)
