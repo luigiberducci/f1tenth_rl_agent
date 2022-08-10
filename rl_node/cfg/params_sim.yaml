@@ -1,7 +1,7 @@
 scan_topic: scan
 nav_topic: drive
 odom_topic: odom
-model: torch_multi_model_400000_steps_20220809
+model: torch_multi_model_20220810
 
 frame_skip: 10
 steering_multiplier: 1.00
