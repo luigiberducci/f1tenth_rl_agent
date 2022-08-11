@@ -6,6 +6,7 @@ observation_config:
   max_range: 15.0
   n_last_actions: 3
   n_last_observations: 3
+  observe_dummy_time: False
 
 action_config:
   min_steering: -0.42

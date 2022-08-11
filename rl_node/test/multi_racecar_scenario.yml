@@ -1,6 +1,6 @@
 world:
-  name: oval
-  reverse: False
+  name: circle_gm
+  reverse: True
   domain_randomization:
     gravity: [ -12, -9.81 ]
     velocity_multiplier: [ 20, 25 ]
@@ -16,7 +16,7 @@ agents:
       color: blue
     task:
       task_name: maximize_progress
-      params: {laps: 1, time_limit: 180.0, terminate_on_collision: False}
+      params: {laps: 3, time_limit: 180.0, terminate_on_collision: False}
   - id: B
     vehicle:
       name: racecar
@@ -25,4 +25,4 @@ agents:
       color: blue
     task:
       task_name: maximize_progress
-      params: {laps: 1, time_limit: 180.0, terminate_on_collision: False}
+      params: {laps: 3, time_limit: 180.0, terminate_on_collision: False}

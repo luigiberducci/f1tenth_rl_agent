@@ -25,6 +25,7 @@ class AgentNode:
         model_file: str = "none"
 
         frame_skip: int = 10
+
         steering_multiplier: float = 1.0
         speed_multiplier: float = 1.0
         min_speed: float = 1.0
@@ -112,9 +113,9 @@ class AgentNode:
 
     @staticmethod
     def adaptation(steer, speed, speed_multiplier, steering_multiplier, min_speed):
-        #speed *= speed_multiplier
-        #speed = max(speed, min_speed)
-        #steer *= steering_multiplier
+        speed *= speed_multiplier
+        speed = max(speed, min_speed)
+        steer *= steering_multiplier
         return steer, speed
 
     def _drive(self, angle, speed):

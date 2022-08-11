@@ -4,6 +4,7 @@ from typing import Dict, Tuple
 
 from dataclasses import dataclass
 import marshmallow_dataclass
+import numpy as np
 import torch
 
 import yaml
@@ -33,6 +34,7 @@ class ObservationConfig:
     max_range: float = None
     n_last_actions: int = None
     n_last_observations: int = None
+    observe_dummy_time: bool = None
 
 
 @dataclass
@@ -139,7 +141,11 @@ class Agent64(Agent):
             last_actions,
             last_lidars,
             last_velxs,
-            ], axis=0)
+        ], axis=0)
+
+        if self.config.observation_config.observe_dummy_time:
+            dummy_time = np.ones((1,), dtype=np.float32)    # 1: max remaining time, 0: no remaining time
+            flat_observation = np.concatenate([flat_observation, dummy_time], axis=0)
 
         return flat_observation
 
@@ -147,7 +153,7 @@ class Agent64(Agent):
         if not self.config.action_config.delta_speed:
             raise ValueError("trying to compute delta-speed in model trained without delta-speed")
         max_delta_speed = self.config.action_config.max_accx * self.config.action_config.frame_skip * self.config.action_config.dt
-        delta_speed = delta_speed * max_delta_speed     # ranges in +-max delta speed
+        delta_speed = delta_speed * max_delta_speed  # ranges in +-max delta speed
 
         self._speed_ms = self._speed_ms + delta_speed
 
