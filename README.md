@@ -5,34 +5,35 @@ for deploying a torch agent model on the [F1Tenth](https://f1tenth.org) car.
 [![IMAGE ALT TEXT HERE](res/video.png)](https://drive.google.com/file/d/1-VEucXos_Dgt9a-In_9JjS4aum47JBjJ/view?usp=sharing)
 
 
+We trained the model using SAC from [Stable Baselines3](https://stable-baselines3.readthedocs.io/en/master/) library.
+The details on training are reported in the [manuscript](https://arxiv.org/abs/2110.02792).
 
-# Building the node
-For portability, the node runs in a docker container.
 
-To build the docker image, run the following commands from the project directory:
+## Content
+
+We describe the steps from having a trained model to deploying it on the car:
+1. **Model preparation**: how to convert sb3 model to torch-script.
+2. **Robustness Test**: assess the agent robustness with **domain randomization**.
+3. **ROS Porting Test**: run the **node** in ROS to ensure the model is loaded correctly.
+4. **Deployment**: the fun part!
+
+
+## The ROS node
+
+For better portability, we decided to implement the node `rl_node` to run in a docker container.
+So, the first step is to build the docker image.
+
+Run the following commands from the project directory:
 ```
 cd <path-to-current-dir>/rl_node/
 docker build -t racecar/rl_node .
 ```
 
-This image will be then used to run the node, as defined in the `docker_starter.sh`.
+This image `racecar/rl_node` will be then used by node, as in the `docker_starter.sh`.
 
 
-# Running the node
-We trained the model using SAC from [Stable Baselines3](https://stable-baselines3.readthedocs.io/en/master/) library.
-The details on training are reported in the manuscript.
-
-However, before deploying on the real racecar, 
-we recommend the following steps:
-1. Convert sb3 model to **torch-script**
-2. **Test** the agent robustness to **domain randomization** with racecar-gym.
-3. **Test** the **node** in ROS with the f1tenth-simulator.
-4. Ok, now try to **deploy it**!
-
-Details on each step follow. 
-
-## Convert sb3 model to torch-script
-Since we don't want to depend on `sb3` policies, 
+## Model preparation
+Since we don't want to depend on `sb3` policies after training, 
 we first export the core model from sb3 format to `torch-script`.
 
 ![alt text](res/sb3_to_torchscript.png)
@@ -46,11 +47,11 @@ The script `rl_node/utils/convert_sb3_to_torch.py` implement the export for poli
 The conversion depends on `sb3` and `torch`, even if the deployed node won't need `sb3`.
 For this reason, the additional dependencies are reported in `rl_node/utils/requirements.txt`.
 
-1. To convert a model `rl_node/checkpoint/sb3/model_20220714.zip`,
+1. To convert a model `rl_node/checkpoint/sb3/<model-filename>.zip`,
 you can run the following command from the project directory:
 ```
 cd rl_node/utils/
-python convert_sb3_to_torch.py --model_file ../checkpoints/sb3/model_20220714.zip --output_dir ../checkpoints
+python convert_sb3_to_torch.py --model_file ../checkpoints/sb3/<model-filename>.zip --output_dir ../checkpoints
 ```
 
 If the `rl_node` package is not found, you need to add the project directory to the `PYTHONPATH`.
@@ -58,22 +59,24 @@ You can run the following command instead of the previous one:
 ```
 export PYTHONPATH="$PYTHONPATH;$(pwd)"
 
-rl_node/utils/
-python convert_sb3_to_torch.py --model_file ../checkpoints/sb3/model_20220714.zip --output_dir ../checkpoints
+cd rl_node/utils/
+python convert_sb3_to_torch.py --model_file ../checkpoints/sb3/<model-filename>.zip --output_dir ../checkpoints
 ```
 
-The output will be a torch-script model `node_rl/checkpoints/model_20220714.pt`.
+The output will be a torch-script model `node_rl/checkpoints/<model-filename>.pt`.
 
 2. You also need to create a configuration file for the model in the `checkpoints` directory, 
 describing the policy class, observation and action configurations.
-For the `Agent64` implementation, look at any sample file, e.g., `rl_node/checkpoints/torch_model_20220714.yaml`
+For the `Agent64` implementation, look at any sample file, e.g., `rl_node/checkpoints/<model-filename>.yaml`
 
-## Test in racecar gym
+## Robustness Test
 The first sanity check is to test the model in the training environment.
+To assess its robustness to small discrepancies with the real world,
+we simulate the agent with domain randomization.
 
-Since the gym environment in not needed once deployed in the real car, 
-we recommend to create a separate virtual environment for testing
-with the requirements in `rl_node/test/requirements.txt`.
+To reproduce this step, we recommend to create a separate virtual environment for testing.
+Since the gym environment is only needed for testing,
+we describe the requirements in `rl_node/test/requirements.txt`.
 
 1. Create a virtual environment and install the requirements:
 ```
@@ -88,59 +91,56 @@ pip install setuptools==65.5.0 "wheel<0.40.0"
 pip install -r requirements.txt
 ```
 
-#### :warning: Note on observation preprocessing
-In training, we heavily use gym-wrappers. You should ensure the same preprocessing is performed by the agent.
 
-As an example, for the agent using 64 lidar beams, we implemented `Agent64`.
-
-In general, each agent should implement the `rl_node.src.agents.agent.Agent` interface.
-
-To the test `Agent64`, you can run the following script:
+2. To test a model in `rl_node/checkpoints/<model-filename>.pt` of type `Agent64`, you can run the following script:
 ```
 cd rl_node/test
-python run_gym_env.py -f single_model_500000_20220730 -no_sb3 --n_episodes 10
+python run_gym_env.py -f <model-filename> --n_episodes <n-rnd-episodes> -no_sb3 
+```
+
+For example, to test the model `rl_node/checkpoints/torch_single_model_20220730.pt` for 100 episodes, you can run:
+```
+python run_gym_env.py -f torch_single_model_20220730 --n_episodes 100 -no_sb3 
 ```
 
 Again, if the `rl_node` package is not found, you need to add the project directory to the `PYTHONPATH`.
-You can run the following command instead of the previous one:
-```
-cd <path-to-project-dir>
-export PYTHONPATH="$PYTHONPATH;$(pwd)"
 
-cd rl_node/test
-python run_gym_env.py -f model_20220714
-```
 
-The simulation in `racecar_gym` will run the agent in the `lecture_hall`
-and randomize the environment parameters at each episode, in the 
-range defined in the scenario file `rl_node/test/racecar_scenario.yaml`.
+The simulation will use the `racecar_gym` environment, loading the map of the `lecture_hall`.
+At each episode, the simulation parameters will be randomized according to the ranges defined in
+the scenario file `rl_node/test/racecar_scenario.yaml`.
 
 ![alt text](res/racecar_gym_dr.gif)
 
-## Test in f1tenth simulator
-Having validated the model in the gym environment,
-we now test the ROS node in the f1tenth simulator.
+## ROS Porting Test
+Having validated the model robustness in the environment, 
+we finally test the ROS node to ensure the model is loaded correctly
+and the node correctly subscribes to the sensor topics.
 
 We assume the `f1tenth-simulator` and the `rl_node` are in the ros workspace.
 For installation of the `f1tenth-simulator`, refer to the [documentation](https://f1tenth.readthedocs.io/en/stable/going_forward/simulator/index.html).
 
 1. Catkin make and source the ros workspace:
 ```
+source /opt/ros/<ros-distro>/setup.bash
 catkin-make
 source devel/setup.bash
 ```
 
-3. In one terminal, launch the simulator:
+2. In one terminal, launch the simulator:
 ```
 roslaunch rl_node simulator.launch
 ```
 
-2. In another terminal, launch the agent node, specifying the yaml file to control topics and adaptation parameters:
+3. In another terminal, launch the agent node, specifying the yaml file to control topics and adaptation parameters:
 ```
 roslaunch rl_node only_agent.launch params:=params_sim.yaml
 ```
 
-You should see the ros node controlling the car in the simulator.
+The node will load the model as specified in the params file.
+Moreover, to account for easy adaptation to the real world,
+the node will scale the actions using proportional gains.
+
 
 ![alt text](res/f110_ros_sim.gif)
 
@@ -148,14 +148,17 @@ You should see the ros node controlling the car in the simulator.
 
 If the previous steps are successful, you can deploy the node on the real car.
 
-To to that, you can launch the `rl_node` with the `hardware.launch` file.
+We recommend to first try with a constant velocity,
+enabling the `debug_mode` in the params file and setting the `debug_speed` to the desired velocity.
+
+1. From the car, launch the `rl_node` with the `hardware.launch` file.
 ```
 roslaunch rl_node hardware.launch
 ```
 
-A part all the `f1tenth system`, it will start three nodes: 
-1. `rl_node`: the inference node using the trained model. 
-2. `safety_node`: the emergency braking system.
+It will start the `f1tenth system` and three nodes: 
+1. `rl_node`: the node that publishes the action from the model. 
+2. `safety_node`: the emergency braking system which stops the car based on time-to-collision (ttc) estimation.
 3. `filter_node`: a velocity filter to publish the current velocity estimation. 
 In its simplest implementation, it simply forwards the velocity given by the vesc rpm conversion.
 
