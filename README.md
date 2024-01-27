@@ -24,7 +24,8 @@ So, the first step is to build the docker image.
 
 Run the following commands from the project directory:
 ```
-cd <path-to-current-dir>/rl_node/
+# from f1tenth_rl_agent/rl_node/
+
 docker build -t racecar/rl_node .
 ```
 
@@ -42,24 +43,25 @@ The exported model is a minimal implementation for inference,
 so we assume to run it in deterministic mode
 (*we won't keep the entire policy, e.g., we discard the stddev and keep only the mean action*).
 
-The script `rl_node/utils/convert_sb3_to_torch.py` implement the export for policy trained with `SAC`.
+The script `utils/convert_sb3_to_torch.py` implement the export for policy trained with `SAC`.
 The conversion depends on `sb3` and `torch`, even if the deployed node won't need `sb3`.
 For this reason, the additional dependencies are reported in `rl_node/utils/requirements.txt`.
 
 1. To convert a model `rl_node/checkpoint/sb3/<model-filename>.zip`,
 you can run the following command from the project directory:
 ```
-cd rl_node/utils/
-python convert_sb3_to_torch.py --model_file ../checkpoints/sb3/<model-filename>.zip --output_dir ../checkpoints
+# from f1tenth_rl_agent/utils/
+
+python convert_sb3_to_torch.py --model_file ../rl_node/checkpoints/sb3/<model-filename>.zip --output_dir ../rl_node/checkpoints
 ```
 
 If the `rl_node` package is not found, you need to add the project directory to the `PYTHONPATH`.
 You can run the following command instead of the previous one:
 ```
-export PYTHONPATH="$PYTHONPATH;$(pwd)"
+# from f1tenth_rl_agent/utils/
 
-cd rl_node/utils/
-python convert_sb3_to_torch.py --model_file ../checkpoints/sb3/<model-filename>.zip --output_dir ../checkpoints
+export PYTHONPATH="$PYTHONPATH;$(pwd)"
+python convert_sb3_to_torch.py --model_file ../rl_node/checkpoints/sb3/<model-filename>.zip --output_dir ../rl_node/checkpoints
 ```
 
 The output will be a torch-script model `node_rl/checkpoints/<model-filename>.pt`.
@@ -77,11 +79,12 @@ we simulate the agent with domain randomization.
 
 To reproduce this step, we recommend to create a separate virtual environment for testing.
 Since the gym environment is only needed for testing,
-we describe the requirements in `rl_node/test/requirements.txt`.
+we describe the requirements in `test/requirements.txt`.
 
 1. Create a virtual environment and install the requirements:
 ```
-cd rl_node/test
+# from f1tenth_rl_agent/test/
+
 python3 -m venv venv
 source venv/bin/activate
 
@@ -95,13 +98,16 @@ pip install -r requirements.txt
 
 2. To test a model in `rl_node/checkpoints/<model-filename>.pt` of type `Agent64`, you can run the following script:
 ```
-cd rl_node/test
+# from f1tenth_rl_agent/test/
+
 python run_gym_env.py -f <model-filename> --n_episodes <n-rnd-episodes> -no_sb3 
 ```
 
 For example, to test the model `rl_node/checkpoints/torch_single_model_20220730.pt` for 100 episodes, you can run:
 ```
-python run_gym_env.py -f torch_single_model_20220730 --n_episodes 100 -no_sb3 
+# from f1tenth_rl_agent/test/
+
+python run_gym_env.py -f single_model_20220730 --n_episodes 100 -no_sb3 
 ```
 
 Again, if the `rl_node` package is not found, you need to add the project directory to the `PYTHONPATH`.
@@ -109,7 +115,7 @@ Again, if the `rl_node` package is not found, you need to add the project direct
 
 The simulation will use the `racecar_gym` environment, loading the map of the `lecture_hall`.
 At each episode, the simulation parameters will be randomized according to the ranges defined in
-the scenario file `rl_node/test/racecar_scenario.yaml`.
+the scenario file `test/racecar_scenario.yaml`.
 
 
 ## ROS Porting Test
@@ -124,6 +130,8 @@ For installation of the `f1tenth-simulator`, refer to the [documentation](https:
 
 1. Catkin make and source the ros workspace:
 ```
+# from ros workspace
+
 source /opt/ros/<ros-distro>/setup.bash
 catkin-make
 source devel/setup.bash
@@ -142,8 +150,6 @@ roslaunch rl_node only_agent.launch params:=params_sim.yaml
 The node will load the model as specified in the params file.
 Moreover, to account for easy adaptation to the real world,
 the node will scale the actions using proportional gains.
-
-
 
 
 ## Deploy on real car

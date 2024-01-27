@@ -8,19 +8,22 @@ from racecar_gym.envs import gym_api
 from rl_node.src.agents.agent64 import Agent64
 
 
+CHECKPOINT_DIR = pathlib.Path("../rl_node/checkpoints")
+
+
 def make_env():
     scenario = SingleAgentScenario.from_spec(
-        path='racecar_scenario.yml',
-        rendering=True
+        path="racecar_scenario.yml", rendering=True
     )
     env = gym_api.SingleAgentRaceEnv(scenario=scenario)
     env.seed(0)
     return env
 
+
 def make_agents(model_name: str, load_sb3: bool):
     model_file = f"torch_{model_name}"  # this is the torch-jit model
-    agent_config_filepath = pathlib.Path(f"../checkpoints/{model_file}.yaml")
-    checkpoint_filepath = pathlib.Path(f"../checkpoints/{model_file}.pt")
+    agent_config_filepath = pathlib.Path(f"{CHECKPOINT_DIR}/{model_file}.yaml")
+    checkpoint_filepath = pathlib.Path(f"{CHECKPOINT_DIR}/{model_file}.pt")
     agent = Agent64(agent_config_filepath)
     result_load = agent.load(checkpoint_filepath)
     assert result_load
@@ -28,7 +31,9 @@ def make_agents(model_name: str, load_sb3: bool):
     if load_sb3:
         from stable_baselines3 import SAC
 
-        sb3_model = SAC.load(f"../checkpoints/sb3/{model_name}.zip")    # this is the baseline model
+        sb3_model = SAC.load(
+            f"{CHECKPOINT_DIR}/sb3/{model_name}.zip"
+        )  # this is the baseline model
         sb3_agent = Agent64(agent_config_filepath)
         sb3_agent.model = sb3_model
     else:
@@ -37,7 +42,9 @@ def make_agents(model_name: str, load_sb3: bool):
     return agent, sb3_agent
 
 
-def check_dict_actions(action1: Dict[str, float], action2: Dict[str, float], tolerance: float = 1e-4):
+def check_dict_actions(
+    action1: Dict[str, float], action2: Dict[str, float], tolerance: float = 1e-4
+):
     for a in ["speed", "steering"]:
         if abs(action1[a] - action2[a]) > tolerance:
             return False
@@ -58,23 +65,22 @@ def generic_test(model_filename: str, n_episodes: int, load_sb3: bool):
 
     n_collisions = 0
     for i in range(n_episodes):
-        obs = env.reset(mode='grid')
+        obs = env.reset(mode="grid")
         done = False
         t = 0
         action = unnorm_action = None
 
-
         while not done:
-            custom_obs = {"lidar": obs["lidar"],
-                          "velocity": obs["velocity"][0]}
+            custom_obs = {"lidar": obs["lidar"], "velocity": obs["velocity"][0]}
 
             if action is None or t % frame_skip == 0:
-
                 norm_action2, action2 = agent.get_action(custom_obs)
 
                 if load_sb3:
                     norm_action1, action1 = sb3_agent.get_action(custom_obs)
-                    assert check_dict_actions(action1, action2), f"action differs, action != sb3_action\n{action1} != {action2}"
+                    assert check_dict_actions(
+                        action1, action2
+                    ), f"action differs, action != sb3_action\n{action1} != {action2}"
 
                 action = norm_action2
                 unnorm_action = action2
@@ -84,13 +90,15 @@ def generic_test(model_filename: str, n_episodes: int, load_sb3: bool):
             actual_speed_history.append(obs["velocity"][0])
 
             obs, rewards, done, states = env.step(action)
-            #time.sleep(0.01)
+            # time.sleep(0.01)
             t += 1
 
-            if states['wall_collision']:
+            if states["wall_collision"]:
                 n_collisions += 1
 
-        print(f"[info] episode: {i+1}, simulation time: {obs['time']}, collision: {states['wall_collision']}")
+        print(
+            f"[info] episode: {i+1}, simulation time: {obs['time']}, collision: {states['wall_collision']}"
+        )
     env.close()
     print(f"n_collisions: {n_collisions}")
     """
@@ -107,7 +115,7 @@ def generic_test(model_filename: str, n_episodes: int, load_sb3: bool):
     assert True
 
 
-if __name__=="__main__":
+if __name__ == "__main__":
     """
     example: python run_gym_env.py -f model_20220714
     """
@@ -119,4 +127,6 @@ if __name__=="__main__":
     parser.add_argument("-no_sb3", action="store_true")
     args = parser.parse_args()
 
-    generic_test(args.model_filename, n_episodes=args.n_episodes, load_sb3=not args.no_sb3)
+    generic_test(
+        args.model_filename, n_episodes=args.n_episodes, load_sb3=not args.no_sb3
+    )
