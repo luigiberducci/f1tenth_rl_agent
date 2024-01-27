@@ -5,7 +5,7 @@ model: torch_multi_model_20220811
 
 frame_skip: 10
 
-steering_multiplier: 1.00
+steering_multiplier: 0.75
 speed_multiplier: 1.00
 min_speed: 1.00
 

@@ -1,6 +1,6 @@
 world:
   name: getreidemarkt
-  reverse: True
+  reverse: False
   domain_randomization:
     gravity: [ -12, -9.81 ]
     velocity_multiplier: [ 20, 25 ]

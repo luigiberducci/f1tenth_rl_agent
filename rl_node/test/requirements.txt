@@ -1,4 +1,4 @@
-gym<0.25
+gym==0.21.0
 -e git+https://github.com/luigiberducci/racecar_gym.git#egg=racecar_gym
 marshmallow-dataclass==8.5.8
 torch==1.10.0

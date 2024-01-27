@@ -4,8 +4,6 @@ from typing import Dict
 import gym
 from racecar_gym import SingleAgentScenario
 from racecar_gym.envs import gym_api
-import numpy as np
-from stable_baselines3 import SAC
 
 from rl_node.src.agents.agent64 import Agent64
 
@@ -13,7 +11,7 @@ from rl_node.src.agents.agent64 import Agent64
 def make_env():
     scenario = SingleAgentScenario.from_spec(
         path='racecar_scenario.yml',
-        rendering=False
+        rendering=True
     )
     env = gym_api.SingleAgentRaceEnv(scenario=scenario)
     env.seed(0)
@@ -28,6 +26,8 @@ def make_agents(model_name: str, load_sb3: bool):
     assert result_load
 
     if load_sb3:
+        from stable_baselines3 import SAC
+
         sb3_model = SAC.load(f"../checkpoints/sb3/{model_name}.zip")    # this is the baseline model
         sb3_agent = Agent64(agent_config_filepath)
         sb3_agent.model = sb3_model
@@ -88,7 +88,7 @@ def generic_test(model_filename: str, n_episodes: int, load_sb3: bool):
             t += 1
 
             if states['wall_collision']:
-                n_collisions =+1
+                n_collisions += 1
 
         print(f"[info] episode: {i+1}, simulation time: {obs['time']}, collision: {states['wall_collision']}")
     env.close()
