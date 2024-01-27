@@ -73,6 +73,8 @@ The first sanity check is to test the model in the training environment.
 To assess its robustness to small discrepancies with the real world,
 we simulate the agent with domain randomization.
 
+![alt text](res/racecar_gym_dr.gif)
+
 To reproduce this step, we recommend to create a separate virtual environment for testing.
 Since the gym environment is only needed for testing,
 we describe the requirements in `rl_node/test/requirements.txt`.
@@ -109,12 +111,13 @@ The simulation will use the `racecar_gym` environment, loading the map of the `l
 At each episode, the simulation parameters will be randomized according to the ranges defined in
 the scenario file `rl_node/test/racecar_scenario.yaml`.
 
-![alt text](res/racecar_gym_dr.gif)
 
 ## ROS Porting Test
 Having validated the model robustness in the environment, 
 we finally test the ROS node to ensure the model is loaded correctly
 and the node correctly subscribes to the sensor topics.
+
+![alt text](res/f110_ros_sim.gif)
 
 We assume the `f1tenth-simulator` and the `rl_node` are in the ros workspace.
 For installation of the `f1tenth-simulator`, refer to the [documentation](https://f1tenth.readthedocs.io/en/stable/going_forward/simulator/index.html).
@@ -141,7 +144,7 @@ Moreover, to account for easy adaptation to the real world,
 the node will scale the actions using proportional gains.
 
 
-![alt text](res/f110_ros_sim.gif)
+
 
 ## Deploy on real car
 
