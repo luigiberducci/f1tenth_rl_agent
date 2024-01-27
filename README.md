@@ -1,6 +1,5 @@
-# Introduction
-This repository contains the implementation of a ROS node 
-for deploying a torch agent model on the [F1Tenth](https://f1tenth.org) car.
+# F1Tenth RL Node in ROS
+Implementation of a ROS node to deploy a torch model of a RL agent on an [F1Tenth](https://f1tenth.org) racecar.
 
 [![IMAGE ALT TEXT HERE](res/video.png)](https://drive.google.com/file/d/1-VEucXos_Dgt9a-In_9JjS4aum47JBjJ/view?usp=sharing)
 
